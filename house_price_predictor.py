@@ -81,8 +81,26 @@ df_Test = lda.transform(df_Test)
 
 # Fitting Random Forest Regression to the dataset
 from sklearn.ensemble import RandomForestRegressor
-regressor = RandomForestRegressor(n_estimators = 10)
+regressor = RandomForestRegressor(n_estimators = 200)
 regressor.fit(X_train, y_train)
+
+# Applying k-Fold Cross Validation
+from sklearn.model_selection import cross_val_score
+accuracies = cross_val_score(estimator = regressor, X = X_train, y = y_train, cv = 10)
+accuracies.mean()
+accuracies.std()
+
+# Applying Grid Search to find the best model and the best parameters
+from sklearn.model_selection import GridSearchCV
+parameters = [{'n_estimators': [100, 200, 300, 400]}]
+grid_search = GridSearchCV(estimator = regressor,
+                           param_grid = parameters,
+                           scoring = 'explained_variance',
+                           cv = 10,
+                           n_jobs = -1)
+grid_search = grid_search.fit(X_train, y_train)
+best_accuracy = grid_search.best_score_
+best_parameters = grid_search.best_params_
 
 # Saving model
 import pickle
