@@ -6,6 +6,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import GridSearchCV
 from xgboost import XGBRegressor
 from sklearn.linear_model import Ridge
+from sklearn.linear_model import Lasso
 from sklearn.linear_model import LinearRegression
 from vecstack import stacking
 from sklearn.model_selection import cross_val_score
@@ -87,54 +88,71 @@ X_train = lda.fit_transform(X_train, y_train)
 explained_variance = lda.explained_variance_ratio_
 df_Test = lda.transform(df_Test)
 
-# Fitting Random Forest Regression to the dataset
-tunning_RF = RandomForestRegressor(n_estimators = 400)
-tunning_RF.fit(X_train, y_train)
-
-# Applying Grid Search to find the best model and the best parameters
-parameters = [{'n_estimators': [350, 400, 500]}]
-grid_search = GridSearchCV(estimator = tunning_RF,
-                           param_grid = parameters,
-                           scoring = 'explained_variance',
-                           cv = 10,
-                           n_jobs = -1)
-grid_search = grid_search.fit(X_train, y_train)
-best_accuracy = grid_search.best_score_
-best_parameters = grid_search.best_params_
-
-# Fitting XGBoost to the Training set
-tunning_XGB = XGBRegressor(base_score=0.43)
-tunning_XGB.fit(X_train, y_train)
-
-# Applying Grid Search to find the best model and the best parameters
-parameters = [{'base_score': [0.42, 0.43, 0.44]}]
-grid_search = GridSearchCV(estimator = tunning_XGB,
-                           param_grid = parameters,
-                           scoring = 'explained_variance',
-                           cv = 10,
-                           n_jobs = -1)
-grid_search = grid_search.fit(X_train, y_train)
-best_accuracy = grid_search.best_score_
-best_parameters = grid_search.best_params_
-
-# Fitting Ridge Regression to the dataset
-tunning_Ridge = Ridge(alpha=5, solver='saga', tol=0.09)
-tunning_Ridge.fit(X_train, y_train)
-
-# Applying Grid Search to find the best model and the best parameters
-parameters = [{'alpha' : [0.01, 1, 5,10,20]}]
-grid_search = GridSearchCV(estimator = tunning_Ridge,
-                           param_grid = parameters,
-                           scoring = 'explained_variance',
-                           cv = 10,
-                           n_jobs = -1)
-grid_search = grid_search.fit(X_train, y_train)
-best_accuracy = grid_search.best_score_
-best_parameters = grid_search.best_params_
+## Fitting Ridge Regression to the dataset
+#tunning_Ridge = Ridge(alpha=5, solver='saga', tol=0.09, max_iter=100)
+#tunning_Ridge.fit(X_train, y_train)
+#
+## Applying Grid Search to find the best model and the best parameters
+#parameters = [{'max_iter' : [10, 100, 1000]}]
+#grid_search = GridSearchCV(estimator = tunning_Ridge,
+#                           param_grid = parameters,
+#                           scoring = 'explained_variance',
+#                           cv = 10,
+#                           n_jobs = -1)
+#grid_search = grid_search.fit(X_train, y_train)
+#best_accuracy = grid_search.best_score_
+#best_parameters = grid_search.best_params_
+#
+## Fitting LASSO Regression to the dataset
+#tunning_Lasso = Lasso(max_iter=10, normalize=True, precompute=True, tol=0.001, warm_start=True)
+#tunning_Lasso.fit(X_train, y_train)
+#
+## Applying Grid Search to find the best model and the best parameters
+#parameters = [{'warm_start' : [True, False]}]
+#grid_search = GridSearchCV(estimator = tunning_Lasso,
+#                           param_grid = parameters,
+#                           scoring = 'explained_variance',
+#                           cv = 10,
+#                           n_jobs = -1)
+#grid_search = grid_search.fit(X_train, y_train)
+#best_accuracy = grid_search.best_score_
+#best_parameters = grid_search.best_params_
+#
+## Fitting XGBoost to the Training set
+#tunning_XGB = XGBRegressor(base_score=0.43)
+#tunning_XGB.fit(X_train, y_train)
+#
+## Applying Grid Search to find the best model and the best parameters
+#parameters = [{'base_score': [0.42, 0.43, 0.44]}]
+#grid_search = GridSearchCV(estimator = tunning_XGB,
+#                           param_grid = parameters,
+#                           scoring = 'explained_variance',
+#                           cv = 10,
+#                           n_jobs = -1)
+#grid_search = grid_search.fit(X_train, y_train)
+#best_accuracy = grid_search.best_score_
+#best_parameters = grid_search.best_params_
+#
+## Fitting Random Forest Regression to the dataset
+#tunning_RF = RandomForestRegressor(n_estimators = 400, warm_start=True)
+#tunning_RF.fit(X_train, y_train)
+#
+## Applying Grid Search to find the best model and the best parameters
+#parameters = [{'warm_start': [True, False]}]
+#grid_search = GridSearchCV(estimator = tunning_RF,
+#                           param_grid = parameters,
+#                           scoring = 'explained_variance',
+#                           cv = 10,
+#                           n_jobs = -1)
+#grid_search = grid_search.fit(X_train, y_train)
+#best_accuracy = grid_search.best_score_
+#best_parameters = grid_search.best_params_
 
 # Stack predicted values to find optimal values
-models = [RandomForestRegressor(n_estimators=400), XGBRegressor(base_score=0.43),
-          Ridge(alpha=5, solver='saga', tol=0.09)]
+models = [RandomForestRegressor(n_estimators = 400, warm_start=True),
+          XGBRegressor(base_score=0.43),
+          Ridge(alpha=5, solver='saga', tol=0.09, max_iter=100),
+          Lasso(max_iter=10, normalize=True, precompute=True, tol=0.001, warm_start=True)]
 S_train, S_test = stacking(models, X_train, y_train, df_Test, regression = True, 
                            metric = 'mean_absolute_error', n_folds =5, stratified = True, shuffle = True)
 regressor = LinearRegression()
