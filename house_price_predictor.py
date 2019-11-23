@@ -1,6 +1,15 @@
 # Importing libraries
 import pandas as pd
 import seaborn as sns
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import GridSearchCV
+from xgboost import XGBRegressor
+from sklearn.linear_model import Ridge
+from sklearn.linear_model import LinearRegression
+from vecstack import stacking
+from sklearn.model_selection import cross_val_score
+import pickle
 
 # Reading dataset
 df = pd.read_csv('train.csv')
@@ -73,27 +82,18 @@ X_train = df_Train.drop(['SalePrice'],axis=1)
 y_train = df_Train['SalePrice']
  
 # Applying LDA
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
 lda = LDA(n_components = 23)
 X_train = lda.fit_transform(X_train, y_train)
 explained_variance = lda.explained_variance_ratio_
 df_Test = lda.transform(df_Test)
 
 # Fitting Random Forest Regression to the dataset
-from sklearn.ensemble import RandomForestRegressor
-regressor = RandomForestRegressor(n_estimators = 200)
-regressor.fit(X_train, y_train)
-
-# Applying k-Fold Cross Validation
-from sklearn.model_selection import cross_val_score
-accuracies = cross_val_score(estimator = regressor, X = X_train, y = y_train, cv = 10)
-accuracies.mean()
-accuracies.std()
+tunning_RF = RandomForestRegressor(n_estimators = 400)
+tunning_RF.fit(X_train, y_train)
 
 # Applying Grid Search to find the best model and the best parameters
-from sklearn.model_selection import GridSearchCV
-parameters = [{'n_estimators': [100, 200, 300, 400]}]
-grid_search = GridSearchCV(estimator = regressor,
+parameters = [{'n_estimators': [350, 400, 500]}]
+grid_search = GridSearchCV(estimator = tunning_RF,
                            param_grid = parameters,
                            scoring = 'explained_variance',
                            cv = 10,
@@ -102,13 +102,53 @@ grid_search = grid_search.fit(X_train, y_train)
 best_accuracy = grid_search.best_score_
 best_parameters = grid_search.best_params_
 
+# Fitting XGBoost to the Training set
+tunning_XGB = XGBRegressor(base_score=0.43)
+tunning_XGB.fit(X_train, y_train)
+
+# Applying Grid Search to find the best model and the best parameters
+parameters = [{'base_score': [0.42, 0.43, 0.44]}]
+grid_search = GridSearchCV(estimator = tunning_XGB,
+                           param_grid = parameters,
+                           scoring = 'explained_variance',
+                           cv = 10,
+                           n_jobs = -1)
+grid_search = grid_search.fit(X_train, y_train)
+best_accuracy = grid_search.best_score_
+best_parameters = grid_search.best_params_
+
+# Fitting Ridge Regression to the dataset
+tunning_Ridge = Ridge(alpha=5, solver='saga', tol=0.09)
+tunning_Ridge.fit(X_train, y_train)
+
+# Applying Grid Search to find the best model and the best parameters
+parameters = [{'alpha' : [0.01, 1, 5,10,20]}]
+grid_search = GridSearchCV(estimator = tunning_Ridge,
+                           param_grid = parameters,
+                           scoring = 'explained_variance',
+                           cv = 10,
+                           n_jobs = -1)
+grid_search = grid_search.fit(X_train, y_train)
+best_accuracy = grid_search.best_score_
+best_parameters = grid_search.best_params_
+
+# Stack predicted values to find optimal values
+models = [RandomForestRegressor(n_estimators=400), XGBRegressor(base_score=0.43),
+          Ridge(alpha=5, solver='saga', tol=0.09)]
+S_train, S_test = stacking(models, X_train, y_train, df_Test, regression = True, 
+                           metric = 'mean_absolute_error', n_folds =5, stratified = True, shuffle = True)
+regressor = LinearRegression()
+regressor.fit(S_train, y_train)
+y_pred = regressor.predict(S_test)
+
+# Applying k-Fold Cross Validation
+accuracies = cross_val_score(estimator = regressor, X = S_train, y = y_train, cv = 10)
+accuracies.mean()
+accuracies.std()
+
 # Saving model
-import pickle
 filename = 'model.pkl'
 pickle.dump(regressor, open(filename, 'wb'))
-
-# Predicting y values for test dataset
-y_pred = regressor.predict(df_Test)
 
 # Saving results into file
 prediction = pd.DataFrame(y_pred)
