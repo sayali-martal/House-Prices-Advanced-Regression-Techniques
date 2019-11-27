@@ -5,4 +5,4 @@ Dataset and information about the competition is given on https://www.kaggle.com
 
 test.py file has preprocessed test data and house_price_predictor.py is the main file.
 
-Using random forest regressor and without tunning the model I'm able to achieve score of 0.13774.
+Using random forest regressor, lasso, ridge and xgboost algorithms together I'm able to achieve score of 0.13774.
