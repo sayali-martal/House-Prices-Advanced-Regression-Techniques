@@ -1,4 +1,5 @@
-# House-Prices-Advanced-Regression-Techniques
+# House prices advanced regression techniques
+
 Kaggle competition for predicting sales prices and practice feature engineering, RFs, and gradient boosting
 
 Dataset and information about the competition is given on https://www.kaggle.com/c/house-prices-advanced-regression-techniques/overview.
